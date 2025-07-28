@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from schema import TravelPlan
@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-modal = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+modal = ChatGroq(
+    model="meta-llama/llama-4-maverick-17b-128e-instruct",
     temperature=0.5,
 )
 
@@ -22,10 +22,10 @@ Tasks:
 2. Use suggest_trip to get location-based ideas.
 3. Create a multi-day itinerary.
 4. Save it with save_plan.
-5. Return only JSON that matches this format:
+5. Provide a summary of the trip.
 
-{format_instructions}
 """
+
 parser = PydanticOutputParser(pydantic_object=TravelPlan)
 
 prompt = ChatPromptTemplate.from_messages([
@@ -33,7 +33,7 @@ prompt = ChatPromptTemplate.from_messages([
     ("placeholder", "{chat_history}"),
     ("human", "{query}"),
     ("placeholder", "{agent_scratchpad}"),
-]).partial(format_instructions=parser.get_format_instructions())
+])
 
 agent = create_tool_calling_agent(
     llm=modal,
@@ -44,7 +44,7 @@ agent = create_tool_calling_agent(
 executor = AgentExecutor(
     agent=agent,
     tools=tools,
-    verbose=True,
+    verbose=False,
 )
 
 chat_history = []
@@ -65,5 +65,5 @@ while True:
         print("\nBudget",output.budget)
         chat_history.append(AIMessage(content=output.itinerary))
     except Exception as e:
-        print(result["output"])
+        print("Agent: ",result["output"])
         continue    

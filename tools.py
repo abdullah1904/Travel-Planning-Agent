@@ -1,7 +1,16 @@
 import os, datetime
-from langchain.tools import Tool
+from langchain.tools import tool
 
-def save_plan(plan: str, location: str="Unknown")-> str:
+@tool
+def save_plan(plan: str, location: str)-> str:
+    """
+    Save the travel plan to a file with a timestamp.
+    Args:
+        plan (str): The travel plan to save.
+        location (str): The location for which the plan is created.
+    Returns:
+        str: Confirmation message with the filename.
+    """
     os.makedirs("plans", exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"plans/{location.replace(' ', '_').lower()}_{timestamp}.txt"
@@ -9,7 +18,15 @@ def save_plan(plan: str, location: str="Unknown")-> str:
         file.write(plan)
     return f'Plan saved as {filename}'
 
+@tool
 def suggest_trip(city:str):
+    """
+    Suggest a trip itinerary for a specific city.
+    Args:
+        city (str): The city for which to suggest a trip.
+    Returns:
+        str: A brief itinerary suggestion.
+    """
     return f"""
     Top 5 things to do in {city}:
     1. Visit historical sites
@@ -20,14 +37,6 @@ def suggest_trip(city:str):
     """
 
 tools = [
-    Tool(
-        name="save_plan",
-        func=save_plan,
-        description="Save the generated itinerary to a file."
-    ),
-    Tool(
-        name="suggest_trip",
-        func=suggest_trip,
-        description="Suggest activities and attractions for a city"
-    )
+    save_plan,
+    suggest_trip
 ]

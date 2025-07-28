@@ -2,7 +2,7 @@ langchain
 langchain-core
 langchain-community
 
-langchain-google-genai
+langchain-groq
 
 pydantic
 python-dotenv
