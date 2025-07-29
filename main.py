@@ -9,8 +9,6 @@ from dotenv import load_dotenv
 import gradio as gr
 import re
 import os
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
 
 load_dotenv()
 
