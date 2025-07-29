@@ -38,5 +38,5 @@ def suggest_trip(city:str):
 
 tools = [
     save_plan,
-    suggest_trip
+    suggest_trip,
 ]

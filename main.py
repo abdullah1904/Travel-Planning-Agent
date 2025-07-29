@@ -6,6 +6,11 @@ from tools import tools
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.messages import HumanMessage, AIMessage
 from dotenv import load_dotenv
+import gradio as gr
+import re
+import os
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 load_dotenv()
 
@@ -24,6 +29,8 @@ Tasks:
 4. Save it with save_plan.
 5. Provide a summary of the trip.
 
+Note: 
+2. Don't show user your internal reasoning or tool calls, just the final response.
 """
 
 parser = PydanticOutputParser(pydantic_object=TravelPlan)
@@ -49,21 +56,49 @@ executor = AgentExecutor(
 
 chat_history = []
 
-print("Welcome to the Travel Planning Assistant! (type 'exit' to quit)")
+def respond(message, history):
+    global chat_history
+    
+    chat_history.append(HumanMessage(content=message))
+    
+    result = executor.invoke({"query": message, "chat_history": chat_history})
+    response = result["output"]
+    
+    chat_history.append(AIMessage(content=response))
 
-while True:
-    q = input("You: ")
-    if q.lower() == "exit":
-        print("Goodbye!")
-        break
-    chat_history.append(HumanMessage(content=q))
-    result = executor.invoke({"query": q, "chat_history": chat_history})
-    try:
-        output = parser.parse(result["output"])
-        print("\nItinerary",output.itinerary)
-        print("\nHighlights",output.highlights)
-        print("\nBudget",output.budget)
-        chat_history.append(AIMessage(content=output.itinerary))
-    except Exception as e:
-        print("Agent: ",result["output"])
-        continue    
+    history.append({"role": "user", "content": message})
+    history.append({"role": "assistant", "content": response})
+    
+    return "", history
+
+def clear_chat():
+    global chat_history
+    chat_history = []
+    return [], "", None
+
+with gr.Blocks(title="Travel Planning Agent") as demo:
+    gr.Markdown("# 🤖 Travel Planning Assistant 🌍")
+
+    chatbot = gr.Chatbot(
+        chat_history,
+        height=400,
+        type="messages"
+    )
+
+    msg = gr.Textbox(
+        show_label=False,
+        placeholder="Type your travel question here..."
+    )
+
+    with gr.Row():
+        submit = gr.Button("Send")
+        clear = gr.Button("Clear")
+
+    gr.Markdown("Plan your perfect trip with personalized travel recommendations and assistance.")
+
+    msg.submit(respond, [msg, chatbot], [msg, chatbot])
+    submit.click(respond, [msg, chatbot], [msg, chatbot])
+    clear.click(clear_chat, None, [chatbot, msg])
+
+if __name__ == "__main__":
+    demo.launch()
